@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RefreshCw, Power, PowerOff, MessageSquare, Map, Users, AlertTriangle, Terminal } from 'lucide-react';
+import { RefreshCw, Power, PowerOff, MessageSquare, Map, Users, AlertTriangle, Terminal, X } from 'lucide-react';
 import { performPowerAction, sendCommand, changeMap } from '../services/api';
 
 interface ActionCardProps {
@@ -46,6 +46,7 @@ const AVAILABLE_MAPS = [
 export const ServerActions: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [popup, setPopup] = useState<{ title: string; content: React.ReactNode } | null>(null);
 
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
@@ -53,20 +54,36 @@ export const ServerActions: React.FC = () => {
   };
 
   const handleMapChange = async () => {
-    const mapSelect = document.createElement('select');
-    mapSelect.innerHTML = AVAILABLE_MAPS.map(map => 
-      `<option value="${map}">${map.split('/')[2]}</option>`
-    ).join('');
-
-    const result = window.prompt('Select or enter map path:', AVAILABLE_MAPS[0]);
-    if (!result) return;
-
-    try {
-      await changeMap(result);
-      showNotification('Map change initiated successfully', 'success');
-    } catch (error) {
-      showNotification('Failed to change map', 'error');
-    }
+    setPopup({
+      title: "Change Map",
+      content: (
+        <div>
+          <select
+            id="mapSelect"
+            className="w-full p-2 mb-4 border rounded"
+          >
+            {AVAILABLE_MAPS.map((map, index) => (
+              <option key={index} value={map}>
+                {map.split('/')[2]}
+              </option>
+            ))}
+          </select>
+          <div className="flex justify-end">
+            <button
+              onClick={async () => {
+                const select = document.getElementById('mapSelect') as HTMLSelectElement;
+                await changeMap(select.value);
+                showNotification('Map change initiated successfully', 'success');
+                setPopup(null);
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Validate
+            </button>
+          </div>
+        </div>
+      )
+    });
   };
 
   const performAction = async (action: string) => {
@@ -86,11 +103,32 @@ export const ServerActions: React.FC = () => {
           showNotification('Server start initiated successfully', 'success');
           break;
         case 'broadcast':
-          const message = prompt('Enter message to broadcast:');
-          if (message) {
-            await sendCommand(`broadcast ${message}`);
-            showNotification('Message broadcasted successfully', 'success');
-          }
+          setPopup({
+            title: "Broadcast Message",
+            content: (
+              <div>
+                <input
+                  type="text"
+                  id="broadcastInput"
+                  className="w-full p-2 mb-4 border rounded"
+                  placeholder="Enter message to broadcast"
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={async () => {
+                      const input = document.getElementById('broadcastInput') as HTMLInputElement;
+                      await sendCommand(`say ${input.value}`);
+                      showNotification('Message broadcasted successfully', 'success');
+                      setPopup(null);
+                    }}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )
+          });
           break;
         case 'change_map':
           await handleMapChange();
@@ -102,11 +140,32 @@ export const ServerActions: React.FC = () => {
           }
           break;
         case 'custom_command':
-          const command = prompt('Enter custom command:');
-          if (command) {
-            await sendCommand(command);
-            showNotification('Command executed successfully', 'success');
-          }
+          setPopup({
+            title: "Custom Command",
+            content: (
+              <div>
+                <input
+                  type="text"
+                  id="commandInput"
+                  className="w-full p-2 mb-4 border rounded"
+                  placeholder="Enter custom command"
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={async () => {
+                      const input = document.getElementById('commandInput') as HTMLInputElement;
+                      await sendCommand(input.value);
+                      showNotification('Command executed successfully', 'success');
+                      setPopup(null);
+                    }}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    Execute
+                  </button>
+                </div>
+              </div>
+            )
+          });
           break;
         default:
           throw new Error('Unknown action');
@@ -135,12 +194,25 @@ export const ServerActions: React.FC = () => {
         </div>
       )}
 
+      {popup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">{popup.title}</h3>
+              <button onClick={() => setPopup(null)} className="text-gray-500 hover:text-gray-700">
+                <X size={24} />
+              </button>
+            </div>
+            {popup.content}
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-3xl font-bold">Server Actions</h2>
         <div className="flex space-x-2">
           <button
-            onClick={() => performAction('custom_command')}
-            className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            onClick={() => performAction('custom_command')} className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
             <Terminal className="mr-2" size={20} />
             Custom Command

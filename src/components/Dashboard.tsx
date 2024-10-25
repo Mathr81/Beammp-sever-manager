@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Server, Activity } from 'lucide-react';
+import { Server, Activity, PersonStandingIcon, CpuIcon, MemoryStickIcon, UserIcon } from 'lucide-react';
 import { getServerStatus, getServerUtilization } from '../services/api';
 
 interface ServerStatusData {
@@ -53,7 +53,8 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
 };
 
-const formatUptime = (seconds: number): string => {
+const formatUptime = (miliseconds: number): string => {
+  const seconds = Math.floor(miliseconds / 1000);
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -125,17 +126,17 @@ export const Dashboard: React.FC = () => {
         <DashboardCard
           title="Players"
           value={status ? `${status.players}/${status.maxplayers}` : 'Unknown'}
-          icon={<Activity className="text-blue-500" size={24} />}
+          icon={<UserIcon className="text-blue-500" size={24} />}
         />
         <DashboardCard
           title="CPU Usage"
           value={utilization ? `${utilization.utilization.resources.cpu_absolute.toFixed(1)}%` : 'Unknown'}
-          icon={<Activity className="text-purple-500" size={24} />}
+          icon={<CpuIcon className="text-purple-500" size={24} />}
         />
         <DashboardCard
           title="Memory Usage"
           value={utilization ? formatBytes(utilization.utilization.resources.memory_bytes) : 'Unknown'}
-          icon={<Activity className="text-yellow-500" size={24} />}
+          icon={<MemoryStickIcon className="text-yellow-500" size={24} />}
         />
       </div>
 

@@ -43,8 +43,8 @@ export const sendCommand = async (command: string) => {
 
 // Map management
 export const changeMap = async (mapPath: string) => {
-  // Using the server command endpoint to change the map
-  return sendCommand(`map ${mapPath}`);
+  const response = await api.post('/settings/set', { setting: "MAP", value: mapPath });
+  return response.data;
 };
 
 // Mods management
